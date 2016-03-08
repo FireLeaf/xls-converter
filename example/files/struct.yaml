@@ -1,0 +1,21 @@
+Example:
+    - id: int
+    - num: int
+    - rate: float
+
+ItemTest:
+    - id: string, item_test
+    - num: int
+
+Vector3:
+    - x: float
+    - y: float
+    - z: float
+
+Item:
+    - id: int
+    - num: int
+
+Cost:
+    - item_id: int
+    - num: int

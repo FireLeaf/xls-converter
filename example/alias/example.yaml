@@ -1,0 +1,37 @@
+物品:
+    .sheets: 
+        范例.xls: all
+    id: id
+    名字: name
+    数值: num
+    牛逼: niu
+    吃货: eat
+
+page_test:
+    .sheets:
+        多页测试.xls: Sheet2
+    .deps:
+        item: item_test
+        item_list: item_test
+        item_dict:
+            key: item_test
+            value: item_test
+    物品集合: itemset
+    测试索引: id
+    物品: item
+    物品列表: item_list
+    物品字典: item_dict
+    数目: num
+
+page_test:
+    .sheets:
+        多页测试.xls: Sheet1
+    id: id
+    物品集合: i_set
+
+item_test:
+    .sheet:
+        物品测试.xls: all
+    id: id
+    物品别名: item_name
+    描述: num
