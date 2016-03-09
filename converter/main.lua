@@ -1,11 +1,10 @@
 local lua_path = os.getenv("LUA_PATH")
-print(lua_path)
 if lua_path then
-    package.path = string.format("%s;%s/?.lua", package.path, lua_path)
+    package.path = string.format("%s;%s", package.path, lua_path)
 end
 local lua_cpath = os.getenv("LUA_CPATH")
 if lua_cpath then
-    package.cpath = string.format("%s;%s/?.dll", package.cpath, lua_cpath)
+    package.cpath = string.format("%s;%s", package.cpath, lua_cpath)
 end
 
 local DataDump = require "dumper"
@@ -59,7 +58,7 @@ end
 
 -- py convert
 info("*****************python convert******************")
-local root_path = os.getenv("ROOT") or "./exporter"
+local root_path = os.getenv("BIN_ROOT") or "./exporter"
 local fp = io.popen(sformat("python %s/xlsparse.py %s %s", root_path, doc_dir, alias_dir))
 while true do
     local data = fp:read("*l")
@@ -143,7 +142,7 @@ for cfg_idx, entry in ipairs(export_cfg) do
     entry[2] = snames
 
     for _, i in ipairs(snames) do
-        info(sformat("lua prepare: %s-%s", fn, i))
+        -- info(sformat("lua prepare: %s-%s", fn, i))
         local sheet = copy[fn]
         assert(sheet, "文件不存在！"..fn)
         local ext = exts[fn]
@@ -423,14 +422,15 @@ for cfg_idx, entry in ipairs(export_cfg) do
 end
 
 -- post convert
-info("*****************lua post convert******************")
+if #post_convert_funcs > 0 then
+    info("*****************lua post convert******************")
+end
 for _, v in ipairs(post_convert_funcs) do
     info("lua post convert: ", v[2])
     save[v[2]] = v[1](save[v[2]], global)
 end
 
 -- ext process
-info("*****************lua post convert******************")
 local merge = {}
 local no_save = {}
 for k, v in pairs(cfg_exts) do
@@ -447,7 +447,6 @@ for _, i in ipairs(no_save) do
 end
 for k, v in pairs(merge) do
     for _, i in ipairs(v) do
-        print(i)
         local d = _get_or_create_key(save, k)
         d[i] = save[i]
         save[i] = nil
@@ -461,17 +460,19 @@ end
 -- tprint(save)
 
 info("*****************save lua file******************")
+local suffix = cfg_env.save_suffix or ""
 for k, v in pairs(save) do
     local s = DataDump(v)
     --local fp = io.open(sformat("%s/%s", cfg_env.output_dir, k), "w")
-    local fp = io.open(sformat("%s/%s", outdir, k), "w")
+    local fp = io.open(sformat("%s/%s%s", outdir, k, suffix), "w")
     fp:write(s)
     fp:close()
+    info("save file: "..k)
 end
 
-info("*****************save json file******************")
 local to_json_list = cfg_env.to_json_list
 if to_json_list and #to_json_list > 0 then
+    info("*****************save json file******************")
     local Json = require "json"
     for _, i in ipairs(to_json_list) do
         local fp = io.open(sformat("%s_json/%s.json", outdir, i), "w")
