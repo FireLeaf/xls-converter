@@ -12,4 +12,5 @@ export = {
     --{"范例.xls", "页面1", "example.lua", "example", {}},
 }
 
+-- save_suffix = ".lua"
 --to_json_list = { "weapon_types", "role", "hit_effects", "barrier","profession","monster","fly_items","pet","common_battle","hit_effects"}
