@@ -56,6 +56,20 @@ local function _get_or_create_key(d, key)
     return ret
 end
 
+local function _merge_hash(d1, d2, msg)
+    msg = msg or "重复的key"
+    for k, v in pairs(d2) do
+        assert(d1[k] == nil, sformat("%s:<%s>", msg, v))
+        d1[k] = v
+    end
+end
+
+local function _merge_array(l1, l2)
+    for _, v in ipairs(l2) do
+        table.insert(l1, v)
+    end
+end
+
 -- py convert
 info("*****************python convert******************")
 local root_path = os.getenv("BIN_ROOT") or "./exporter"
@@ -113,8 +127,8 @@ for cfg_idx, entry in ipairs(export_cfg) do
     local script = entry[3]
     local save_name = entry[4]
     info("lua prepare: "..save_name)
-    assert(save_name_d[save_name] == nil and merge_name_d[save_name] == nil,
-             "输出名字重复")
+    assert(merge_name_d[save_name] == nil,
+             "输出名字重复:"..save_name)
     save_name_d[save_name] = true
     local ext_d = entry[5]
     if next(ext_d) then
@@ -155,10 +169,7 @@ for cfg_idx, entry in ipairs(export_cfg) do
             end
             if ext.key_alias then
                 local kd = _get_or_create_key(key_alias, save_name)
-                for k, v in pairs(ext.key_alias) do
-                    assert(not kd[k], sformat("重复的key_alias:<%s>", k))
-                    kd[k] = v
-                end
+                _merge_hash(kd, ext.key_alias, "重复的key_alias")
             end
             if ext.typ == "d" then
                 local ckd = _get_or_create_key(cfg_keys, save_name)
@@ -169,10 +180,7 @@ for cfg_idx, entry in ipairs(export_cfg) do
             end
             if ext.key_check then
                 local ckd = _get_or_create_key(cfg_keys, save_name)
-                for k, v in pairs(ext.key_check) do
-                    assert(not ckd[k], sformat("重复的key:<%s>", k))
-                    ckd[k] = v
-                end 
+                _merge_hash(ckd, ext.key_check, "重复的key")
             end
         else
             -- 整个文件导出不处理ext
@@ -378,7 +386,6 @@ for cfg_idx, entry in ipairs(export_cfg) do
     for _, i in ipairs(snames) do
         info(sformat("lua convert: %s-%s", fn, i))
         local pre = save[save_name]
-        local t
         local sheet = copy[fn]
         assert(sheet, "文件不存在！"..fn)
         local ext = exts[fn]
@@ -389,32 +396,27 @@ for cfg_idx, entry in ipairs(export_cfg) do
         else
             assert(not pre, "whole workbook export save name dup!")
         end
+        local t
         if convert_f then
             ext_data = {
                 filename = fn,
                 sheetname = i,
             }
-            t = convert_f(sheet, global, pre, ext_data)
+            t = convert_f(sheet, global, ext_data)
         else
-            if pre then
-                assert(last_save_type[save_name] == ext.typ, "多表页类型不匹配")
-                if ext.typ == "d" then
-                    for k, v in pairs(sheet) do
-                        assert(not pre[k], sformat("重复的key:<%d>", k))
-                        pre[k] = v
-                    end
-                elseif ext.typ == "l" then
-                    for _, v in pairs(sheet) do
-                        table.insert(pre, v)
-                    end
-                end
-                t = pre
-            else
-                t = sheet
-                last_save_type[save_name] = ext.typ
-            end
+            t = sheet
         end
-        save[save_name] = t
+        if pre then
+            assert(last_save_type[save_name] == ext.typ, "多表页类型不匹配")
+            if ext.typ == "d" then
+                _merge_hash(pre, t)
+            elseif ext.typ == "l" then
+                _merge_array(pre, t)
+            end
+        else
+            save[save_name] = t
+            last_save_type[save_name] = ext.typ
+        end
     end
     if mod.post_convert then
         table.insert(post_convert_funcs, {mod.post_convert, save_name})

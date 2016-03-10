@@ -7,4 +7,3 @@ set LUA_PATH=%BIN_ROOT%/?.lua
 lua %BIN_ROOT%\main.lua config.lua files alias scripts output
 
 pause
-
