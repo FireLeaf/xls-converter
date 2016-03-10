@@ -75,7 +75,7 @@ def parse(path):
                 if cont == "all":
                     _process_all(cont)
                 else:
-                    if isinstance(cont, str):
+                    if isinstance(cont, str) or isinstance(cont, unicode):
                         cont = [cont,]
                     _process_list(cont)
     return raw, field_alias, deps
