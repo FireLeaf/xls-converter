@@ -212,6 +212,7 @@ def sheet_to_dict(sheet, alias_d):
             # 注释行忽略
             if isinstance(row[0], unicode) and row[0].startswith("//"):
                 continue
+            row_key = None
             for ncol, value in enumerate(row):
                 col_name = col_names[ncol]
                 if not col_name:
@@ -244,6 +245,8 @@ def sheet_to_dict(sheet, alias_d):
                         # print col_name
                         continue
                 row_d[col_name] = cv
+            if not raw_flag and key_flag and row_key == None:
+                raise Exception("本行key列没有导出！")
             def _check_key(check_d):
                 # 检查key是否重复
                 if raw_flag and row_key == None:
