@@ -189,6 +189,8 @@ for cfg_idx, entry in ipairs(export_cfg) do
     end
 end
 
+global.alias2key = key_alias
+
 -- check and convert depends
 local check = cfg_keys
 local convert = key_alias
