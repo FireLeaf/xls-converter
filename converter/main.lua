@@ -366,6 +366,7 @@ assert = raw_assert
 info("*****************lua convert******************")
 local last_save_type = {}
 local post_convert_funcs = {}
+local post_convert_names = {}
 for cfg_idx, entry in ipairs(export_cfg) do
     local fn = entry[1]
     local snames = entry[2]
@@ -421,7 +422,13 @@ for cfg_idx, entry in ipairs(export_cfg) do
         end
     end
     if mod.post_convert then
-        table.insert(post_convert_funcs, {mod.post_convert, save_name})
+        local last_script = post_convert_names[save_name]
+        if not last_script then
+            post_convert_names[save_name] = script
+            table.insert(post_convert_funcs, {mod.post_convert, save_name})
+        else
+            assert(last_script == script, "不同脚本的post_convert方法对应了同个导出名字")
+        end
     end
 end
 
