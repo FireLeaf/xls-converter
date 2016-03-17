@@ -12,6 +12,12 @@ import lseri
 
 reload(sys)
 sys.setdefaultencoding("utf8")
+import codecs
+def cp65001(name):
+    if name.lower() == "cp65001":
+        return codecs.lookup("utf8")
+codecs.register(cp65001)
+
 
 g_error_l = []
 g_alias_d = None
@@ -178,12 +184,13 @@ def sheet_to_dict(sheet, alias_d):
     alias_d = alias_d["alias"] if alias_d and "alias" in alias_d else None
     try:
         # 处理第一行，类型
+        end_col = None
         for n, i in enumerate(sheet.row_values(0)):
+            end_col = n + 1
+            # 允许类型列填空，意味该列忽略
             if n > 0 and i == "" :
-                # 允许类型列填空，意味该列忽略
-                tags.append({"ignore":True})
-                struct_deps_l.append(None)
-                continue
+                end_col = n
+                break
             type_sl = i.split("#")
             conv_f = make_convert_func(type_sl[0])
             conv_funcs.append(conv_f)
@@ -195,7 +202,7 @@ def sheet_to_dict(sheet, alias_d):
     except Exception, e:
         raise Exception("sheet:<%s>类型行%d列填写错误, 内容:<%s>, msg:%s"%(sheet.name, n+1, i, e))
 
-    name_row = sheet.row_values(1)
+    name_row = sheet.row_values(1,end_colx=end_col)
     dup_idx = _find_dup_in_list(name_row)
     if dup_idx != -1:
         raise Exception("sheet:<%s>列名重复:<%s>"%(sheet.name, name_row[dup_idx]))
@@ -218,7 +225,7 @@ def sheet_to_dict(sheet, alias_d):
     ret = {} if key_flag and not raw_flag else []
     key_alias_d = {} if key_alias_flag else None
     for nrow in xrange(2, sheet.nrows):
-        row = sheet.row_values(nrow)
+        row = sheet.row_values(nrow, end_colx=end_col)
         row_d = {}
         try:
             # 注释行忽略
