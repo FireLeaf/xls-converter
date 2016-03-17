@@ -160,6 +160,15 @@ def parse_type_tag(ncol, tag_sl, type_s, conv_f):
 def open_xls(filename):
     return xlrd.open_workbook(filename)
 
+# 返回的是下标
+def _find_dup_in_list(l):
+    d = {}
+    for n, i in enumerate(l):
+        if i in d:
+            return n
+        d[i] = 1
+    return -1
+
 def sheet_to_dict(sheet, alias_d):
     conv_funcs = []
     tags = []
@@ -187,6 +196,9 @@ def sheet_to_dict(sheet, alias_d):
         raise Exception("sheet:<%s>类型行%d列填写错误, 内容:<%s>, msg:%s"%(sheet.name, n+1, i, e))
 
     name_row = sheet.row_values(1)
+    dup_idx = _find_dup_in_list(name_row)
+    if dup_idx != -1:
+        raise Exception("sheet:<%s>列名重复:<%s>"%(sheet.name, name_row[dup_idx]))
     col_names = []
     if alias_d:
         for name in name_row:
