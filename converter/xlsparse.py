@@ -43,6 +43,10 @@ def error(msg):
     output(lseri.tolua({"error":msg}))
     sys.exit(1)
 
+def print_stack():
+    import traceback
+    traceback.print_exc()
+
 
 # 基础数据类型：int, float, string
 basictype_convert_tbl = {
@@ -130,25 +134,33 @@ type_default_tbl = {
         }
 def parse_type_tag(ncol, tag_sl, type_s, conv_f):
     ret = {}
-    if "key" in tag_sl:
+    def _key_f():
         assert ncol == 0, "key必须是第一列"
         assert type_s == "int" or type_s == "string", "类型:<%s>不能做key"%type_s
         ret["key"] = True
-    if "ignore" in tag_sl:
-        assert "key" not in ret, "key类型不能设置忽略"
+    def _ignore_f():
         ret["ignore"] = True
-    if "raw" in tag_sl:
+    def _raw_f():
         ret["raw"] = True
-    if "key_alias" in tag_sl:
+    def _key_alias_f():
         assert ncol == 1, "key_alias必须是第二列"
         ret["key_alias"] = True
-    if "index" in tag_sl:
+    def _index_f():
         ret["index"] = True
+    tag_fs = {
+        "key":_key_f,
+        "ignore":_ignore_f,
+        "raw":_raw_f,
+        "key_alias":_key_alias_f,
+        "index":_index_f,
+    }
     
     for tag_s in tag_sl:
         if not tag_s.startswith("default"):
+            assert tag_s in tag_fs, "标签填写错误:<%s>"%tag_s
+            tag_fs[tag_s]()
             continue
-        assert "key" not in ret, "key类型不能设置默认"
+        # defautl 处理
         assert type_s not in g_struct_d, "自定义类型:<%s>不能设置默认"%type_s
         m = TYPE_DEFAULT_RE.match(tag_s)
         if m:
@@ -160,7 +172,8 @@ def parse_type_tag(ncol, tag_sl, type_s, conv_f):
         else:
             assert False, tag_s
         ret["default"] = default_val
-        break
+    assert not ("key" in ret and "default" in ret), "key类型不能设置default"
+    assert not ("key" in ret and "ignore" in ret), "key类型不能设置ignore"
     return ret
 
 def open_xls(filename):
@@ -282,8 +295,6 @@ def sheet_to_dict(sheet, alias_d):
                     _check_key(raw_keys)
                 ret.append(row_d)
         except Exception, e:
-            import traceback
-            traceback.print_exc()
             raise Exception("sheet:%s, cell:<行%s-列%s>, %s"%(sheet.name, nrow+1, ncol+1, e))
     return ret, struct_deps_d, key_alias_d
 
