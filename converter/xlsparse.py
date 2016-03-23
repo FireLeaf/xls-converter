@@ -323,7 +323,7 @@ def convert_xls(filename, out_dir=None):
         for sheet in wb.sheets():
             if sheet.name.startswith("_"):
                 continue
-            if sheet.nrows <= 2:
+            if sheet.nrows < 2:
                 continue
             data, deps_d, key_alias_d = sheet_to_dict(sheet, get_alias_conf(wbname, sheet.name))
             ret[sheet.name] = data
