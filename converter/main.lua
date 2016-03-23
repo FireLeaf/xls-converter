@@ -208,6 +208,7 @@ assert = function(v, msg)
 end
 
 local function _conv(check, convert, i, msg)
+    assert(check, sformat("%s %s", msg, "依赖的表不存在,应该填写config中的存盘名字"))
     if type(i) == "number" then
         if i == 0 then
             return 0
@@ -241,7 +242,7 @@ local function _make_check_f(deps)
                 end
                 return ret
             else
-                local tmp = _conv(src, dst, ckd, "simple error: "..(ckd or "nil")..type(ckd))
+                local tmp = _conv(src, dst, ckd, "simple error: "..(ckd or "nil"))
                 return tmp
             end
         end
@@ -364,6 +365,8 @@ for _, v in ipairs(export_cfg) do
 end
 
 assert = raw_assert
+
+-- tprint(copy)
 
 -- lua convert
 info("*****************lua convert******************")
