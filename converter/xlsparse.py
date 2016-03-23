@@ -18,7 +18,6 @@ def cp65001(name):
         return codecs.lookup("utf8")
 codecs.register(cp65001)
 
-
 g_error_l = []
 g_alias_d = None
 g_alias_deps = None
@@ -43,7 +42,7 @@ def error(msg):
     output(lseri.tolua({"error":msg}))
     sys.exit(1)
 
-def print_stack():
+def print_exc():
     import traceback
     traceback.print_exc()
 

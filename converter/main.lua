@@ -113,6 +113,9 @@ while true do
     end
 end
 fp:close()
+if not next(copy) then
+    error("no xls file convert!")
+end
 
 -- lua prepare
 info("*****************lua prepare******************")

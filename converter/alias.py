@@ -20,11 +20,9 @@ def _parse_sheets(conf):
 
 def _log(msg, fn, cfgname, xls=None, sheet=None):
     return "alias error, %s, file:<%s>, cfg:<%s>, xls:<%s>, sheet:<%s>"%(msg, fn, cfgname, xls, sheet)
-        
 
 def _parse_deps(depsd):
     return depsd
-
 
 def parse(path):
     raw = {}
@@ -50,6 +48,7 @@ def parse(path):
                 continue
             sheets = item[".sheets"]
             del item[".sheets"]
+            assert isinstance(sheets, dict), _log("sheets is not dict", fn, cfgname)
             cfg = {}
             if ".deps" in item:
                 deps[cfgname] = item[".deps"]
@@ -57,18 +56,20 @@ def parse(path):
                 del item[".deps"]
             raw[cfgname] = item
             cfg["alias"] = item
+            def _sheet_log(msg):
+                return _log(msg, fn, cfgname, xls, cont)
             def _process_all(cont):
-                assert cont == "all",  _log("sheet def error", fn, cfgname, xls, cont)
-                assert xls not in all_defs, _log("all def dup", fn, cfgname, xls, cont)
+                assert cont == "all",  _sheet_log("sheet def error")
+                assert xls not in all_defs, _sheet_log("all def dup")
                 all_defs.add(xls)
-                assert xls not in sheet_defs, _log("all def after sheet", fn, cfgname, xls, cont)
+                assert xls not in sheet_defs, _sheet_log("all def after sheet")
                 field_alias[xls] = cfg
             def _process_list(cont):
-                assert isinstance(cont, list), _log("sheet def type error", fn, cfgname, xls, cont)
+                assert isinstance(cont, list), _sheet_log("sheet def type error")
                 for sh in cont:
-                    assert xls not in all_defs, _log("sheet def after all", fn, cfgname, xls, cont)
+                    assert xls not in all_defs, _sheet_log("sheet def after all")
                     key = make_key(xls, sh)
-                    assert key not in field_alias, _log("sheet def after sheet", fn, cfgname, xls, cont)
+                    assert key not in field_alias, _sheet_log("sheet def after sheet")
                     sheet_defs.add(xls)
                     field_alias[key] = cfg
             for xls, cont in sheets.iteritems():
