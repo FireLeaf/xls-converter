@@ -191,7 +191,10 @@ for cfg_idx, entry in ipairs(export_cfg) do
         end
     end
 end
-
+-- check deps cfgname
+for k, _ in pairs(alias_deps) do
+    assert(save_name_d[k], sformat("deps所在的别名定义配置名称必须在config的导出名字中:<%s>", k))
+end
 global.alias2key = key_alias
 
 -- check and convert depends
