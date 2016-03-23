@@ -46,7 +46,6 @@ def print_exc():
     import traceback
     traceback.print_exc()
 
-
 # 基础数据类型：int, float, string
 basictype_convert_tbl = {
         "int":int,
@@ -187,6 +186,15 @@ def _find_dup_in_list(l):
         d[i] = 1
     return -1
 
+def _num2colname(n):
+    def _n2chr(i):
+        return chr(65+i)
+    if n < 26:
+        return _n2chr(n)
+    elif n < 26*27:
+        return _n2chr(n/26-1) + _n2chr(n%26)
+    return str(n)
+
 def sheet_to_dict(sheet, alias_d):
     conv_funcs = []
     tags = []
@@ -212,7 +220,7 @@ def sheet_to_dict(sheet, alias_d):
                 tags.append({})
             struct_deps_l.append(find_struct_deps(type_sl[0]))
     except Exception, e:
-        raise Exception("sheet:<%s>类型行%d列填写错误, 内容:<%s>, msg:%s"%(sheet.name, n+1, i, e))
+        raise Exception("sheet:<%s>类型行%s列填写错误, 内容:<%s>, msg:%s"%(sheet.name, _num2colname(n), i, e))
 
     name_row = sheet.row_values(1,end_colx=end_col)
     dup_idx = _find_dup_in_list(name_row)
@@ -294,7 +302,7 @@ def sheet_to_dict(sheet, alias_d):
                     _check_key(raw_keys)
                 ret.append(row_d)
         except Exception, e:
-            raise Exception("sheet:%s, cell:<行%s-列%s>, %s"%(sheet.name, nrow+1, ncol+1, e))
+            raise Exception("sheet:%s, cell:<行%s-列%s>, %s"%(sheet.name, nrow+1, _num2colname(ncol), e))
     return ret, struct_deps_d, key_alias_d
 
 
