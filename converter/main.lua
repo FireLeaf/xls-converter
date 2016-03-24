@@ -495,6 +495,7 @@ if to_json_list and #to_json_list > 0 then
     info("*****************save json file******************")
     local Json = require "json"
     for _, i in ipairs(to_json_list) do
+        assert(save[i], sformat("要保存json的数据不存在:<%s>", i))
         local fp = io.open(sformat("%s_json/%s.json", outdir, i), "w")
         local s = Json.encode(save[i])
         fp:write(s)
