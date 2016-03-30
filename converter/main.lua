@@ -168,7 +168,10 @@ for cfg_idx, entry in ipairs(export_cfg) do
             assert(sheet, sformat("file:<%s> has no sheet:<%s>", fn, i))
             ext = ext[i]
             if ext.deps then
-                save_check_struct_deps[save_name] = ext.deps
+                local kd = _get_or_create_key(save_check_struct_deps, save_name)
+				for k, v in pairs(ext.deps) do
+					kd[k] = kd[k] or v
+				end
             end
             if ext.key_alias then
                 local kd = _get_or_create_key(key_alias, save_name)
@@ -191,6 +194,7 @@ for cfg_idx, entry in ipairs(export_cfg) do
         end
     end
 end
+
 -- check deps cfgname
 for k, _ in pairs(alias_deps) do
     assert(save_name_d[k], sformat("deps所在的别名定义配置名称必须在config的导出名字中:<%s>", k))
@@ -328,21 +332,24 @@ local function _check_struct_deps(sheet, deps_cfg)
         for field, field_cfg in pairs(deps_cfg) do
             log_field = field
             local value = entry[field]
-            local flag, cfg = field_cfg[1], field_cfg[2]
-            if flag == "s" then
-                _check_struct_value_deps(value, cfg)
-            elseif flag == "l" then
-                for _, v in ipairs(value) do
-                    _check_struct_value_deps(v, cfg)
-                end
-            elseif flag == "d" then
-                for _, v in pairs(value) do
-                    _check_struct_value_deps(v, cfg)
+            if value then
+                local flag, cfg = field_cfg[1], field_cfg[2]
+                if flag == "s" then
+                    _check_struct_value_deps(value, cfg)
+                elseif flag == "l" then
+                    for _, v in ipairs(value) do
+                        _check_struct_value_deps(v, cfg)
+                    end
+                elseif flag == "d" then
+                    for _, v in pairs(value) do
+                        _check_struct_value_deps(v, cfg)
+                    end
                 end
             end
         end
     end
 end
+
 
 info("*****************check and convert depends******************")
 for _, v in ipairs(export_cfg) do

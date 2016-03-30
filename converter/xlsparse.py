@@ -280,7 +280,7 @@ def sheet_to_dict(sheet, alias_d):
                         continue
                 if "index" in tags[ncol]:
                     # 普通index
-                    if col_name not in alias_deps:
+                    if col_name not in alias_deps and col_name not in struct_deps_d:
                         # print col_name
                         continue
                 row_d[col_name] = cv
