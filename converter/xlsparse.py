@@ -85,6 +85,8 @@ def get_basic_or_struct_cf(s):
         return None
     cfg = g_struct_d[s]
     def cf(cont):
+        if cont == "":
+            return None
         l = cont.split("|")
         assert len(l)==len(cfg), cont
         ret = {}
@@ -159,7 +161,7 @@ def parse_type_tag(ncol, tag_sl, type_s, conv_f):
             tag_fs[tag_s]()
             continue
         # defautl 处理
-        assert type_s not in g_struct_d, "自定义类型:<%s>不能设置默认"%type_s
+        # assert type_s not in g_struct_d, "自定义类型:<%s>不能设置默认"%type_s
         m = TYPE_DEFAULT_RE.match(tag_s)
         if m:
             default_val = m.group(1) 

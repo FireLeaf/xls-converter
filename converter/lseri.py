@@ -26,6 +26,8 @@ def _format_basic(obj):
         repl_sep = "'" if sep == '"' else '"'
         s = "%s%s%s"%(sep, obj.replace(sep, repl_sep).replace("\n", "&&").replace("\\", "\\\\"), sep)
         return s
+    if obj == None:
+        return "nil"
     return str(obj)
 
 def tolua(obj):
