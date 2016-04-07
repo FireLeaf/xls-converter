@@ -24,7 +24,7 @@ def _format_basic(obj):
     if isinstance(obj, str):
         sep = "'" if obj.find('"') != -1 else '"'
         repl_sep = "'" if sep == '"' else '"'
-        s = "%s%s%s"%(sep, obj.replace(sep, repl_sep).replace("\n", "&&").replace("\\", "\\\\"), sep)
+        s = "%s%s%s"%(sep, obj.replace(sep, repl_sep).replace("\\", "\\\\").replace("\n", "\\n"), sep)
         return s
     if obj == None:
         return "nil"
