@@ -6,7 +6,10 @@ def _log(msg, struct, idx=None):
 
 def parse(fn):
     deps = {}
-    fp = open(fn, "r")
+    try:
+        fp = open(fn, "r")
+    except IOError:
+        return {}
     struct_d = yaml.load(fp)
     fp.close()
     for name, cfg in struct_d.iteritems():
@@ -14,9 +17,27 @@ def parse(fn):
         assert name[:1].isupper(), _log("First must upper!", name)
         for idx, entry in enumerate(cfg):
             assert len(entry)==1, _log("field def error", name, idx)
-            type_sl = entry.values()[0].split(",")
-            if len(type_sl) == 2:
-                deps[name] = {entry.keys()[0]: type_sl[1].strip()}
-            assert type_sl[0] in ["int", "float", "string"], _log("field type error")
-            entry[entry.keys()[0]] = type_sl[0]
-    return struct_d, deps
+            type_s = entry.values()[0]
+            assert type_s in ["int", "float", "string"], _log("field type error:<%s>"%type_s, name, idx)
+            entry[entry.keys()[0]] = type_s
+    return struct_d
+
+def _deps_log(msg, struct, field=None):
+    return "struct:%s deps def error, field:<%s>, %s"%(struct, field, msg)
+
+def parse_deps(fn, struct_d):
+    try:
+        fp = open(fn, "r")
+    except IOError:
+        return {}
+    deps_d = yaml.load(fp)
+    fp.close()
+    if not deps_d:
+        return {}
+    for name, cfg in deps_d.iteritems():
+        assert name in struct_d, _deps_log("struct没有定义", name)
+        fields = [i.keys()[0] for i in struct_d[name]]
+        for field, dep in cfg.iteritems():
+            assert field in fields, _deps_log("字段没有定义", name, field)
+    return deps_d
+

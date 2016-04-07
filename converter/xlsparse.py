@@ -378,7 +378,8 @@ if __name__ == "__main__":
             output(lseri.tolua({"alias_fields":alias_raw}))
         if len(g_alias_deps) > 0:
             output(lseri.tolua({"alias_deps":g_alias_deps}))
-        g_struct_d, g_struct_deps = typedef.parse(os.path.join(fpath, "struct.yaml"))
+        g_struct_d = typedef.parse(os.path.join(fpath, "struct.yaml"))
+        g_struct_deps = typedef.parse_deps(os.path.join(sys.argv[2], "struct_deps.yaml"), g_struct_d)
         if len(g_struct_deps) > 0:
             output(lseri.tolua({"struct_deps":g_struct_deps}))
     except Exception, e:

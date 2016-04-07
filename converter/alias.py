@@ -35,6 +35,9 @@ def parse(path):
     for fn in [os.path.join(path, i) for i in os.listdir(path)]:
         if not fn.endswith(".yaml"):
             continue
+        # 专门指定自定义结构依赖的yaml
+        if fn.endswith("struct_deps.yaml"):
+            continue
         fp = open(fn, "r")
         try:
             d = yaml.load(fp)
