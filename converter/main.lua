@@ -441,7 +441,8 @@ for cfg_idx, entry in ipairs(export_cfg) do
         local last_script = post_convert_names[save_name]
         if not last_script then
             post_convert_names[save_name] = script
-            table.insert(post_convert_funcs, {mod.post_convert, save_name})
+            local sheets = string.format("save:<%s> file:<%s> sheets:<%s>", save_name, fn, table.concat(snames, ","))
+            table.insert(post_convert_funcs, {mod.post_convert, save_name, sheets})
         else
             assert(last_script == script, "不同脚本的post_convert方法对应了同个导出名字")
         end
@@ -453,7 +454,7 @@ if #post_convert_funcs > 0 then
     info("*****************lua post convert******************")
 end
 for _, v in ipairs(post_convert_funcs) do
-    info("lua post convert: ", v[2])
+    info("lua post convert: ", v[3])
     save[v[2]] = v[1](save[v[2]], global)
 end
 
