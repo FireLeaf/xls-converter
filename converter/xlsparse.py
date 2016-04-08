@@ -105,9 +105,13 @@ def make_convert_func(type_s):
     assert len(sg) == 3, "类型解析错误"
     if sg[0] == "list":
         assert not sg[2], "list定义有误"
-        f = get_basic_or_struct_cf(sg[1])
+        typ = sg[1]
+        f = get_basic_or_struct_cf(typ)
         assert f, "list元素类型定义有误:%s"%type_s
         def cf(s):
+            # xls单元格会默认把数字格式转换成float
+            if typ == "int" and isinstance(s, float):
+                s = str(int(s))
             return [f(i) for i in s.split()]
         return cf
     elif sg[0] == "dict":
