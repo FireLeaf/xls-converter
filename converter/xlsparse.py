@@ -283,8 +283,8 @@ def sheet_to_dict(sheet, alias_d):
                 if "index" in tags[ncol]:
                     # 普通index
                     if col_name not in alias_deps and col_name not in struct_deps_d:
-                        # print col_name
-                        continue
+                        if alias_d:
+                            raise Exception("%s填写了index但没有定义依赖"%col_name)
                 row_d[col_name] = cv
             if not raw_flag and key_flag and row_key == None:
                 raise Exception("本行key列没有导出！")
