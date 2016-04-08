@@ -127,6 +127,8 @@ def make_convert_func(type_s):
 TYPE_DEFAULT_RE = re.compile("^default(?:\((.*)\))?$")
 #m = TYPE_DEFAULT_RE.match("default")
 #print m.group(2)
+TAG_KEY_RE = re.compile("^key(?:\((.*)\))?$")
+
 type_default_tbl = {
         "int":0,
         "float":0.0,
@@ -148,7 +150,7 @@ def parse_type_tag(ncol, tag_sl, type_s, conv_f):
     def _index_f():
         ret["index"] = True
     tag_fs = {
-        "key":_key_f,
+        #"key":_key_f,
         "ignore":_ignore_f,
         "raw":_raw_f,
         "key_alias":_key_alias_f,
@@ -156,12 +158,11 @@ def parse_type_tag(ncol, tag_sl, type_s, conv_f):
     }
     
     for tag_s in tag_sl:
-        if not tag_s.startswith("default"):
-            assert tag_s in tag_fs, "标签填写错误:<%s>"%tag_s
+        if tag_s in tag_fs:
+            #assert tag_s in tag_fs, "标签填写错误:<%s>"%tag_s
             tag_fs[tag_s]()
             continue
         # defautl 处理
-        # assert type_s not in g_struct_d, "自定义类型:<%s>不能设置默认"%type_s
         m = TYPE_DEFAULT_RE.match(tag_s)
         if m:
             default_val = m.group(1) 
@@ -169,9 +170,23 @@ def parse_type_tag(ncol, tag_sl, type_s, conv_f):
                 default_val = type_default_tbl[type_s]
             else:
                 default_val = conv_f(default_val if default_val else "")
-        else:
-            assert False, tag_s
-        ret["default"] = default_val
+            ret["default"] = default_val
+            continue
+        # key 处理
+        m = TAG_KEY_RE.match(tag_s)
+        if m:
+            assert ncol == 0, "key必须是第一列"
+            assert type_s == "int" or type_s == "string", "类型:<%s>不能做key"%type_s
+            d = {}
+            key_attr = m.group(1)
+            if key_attr:
+                assert key_attr == "incr", "key的属性只能是incr"
+                assert type_s == "int", "incr key只能是int类型"
+                d["incr"] = True
+            ret["key"] = d
+            continue
+        raise Exception(tag_s)
+
     assert not ("key" in ret and "default" in ret), "key类型不能设置default"
     assert not ("key" in ret and "ignore" in ret), "key类型不能设置ignore"
     return ret
@@ -243,6 +258,8 @@ def sheet_to_dict(sheet, alias_d):
     raw_flag = check_tag_f(tags[0],"raw")
     raw_keys = {}
     key_flag = check_tag_f(tags[0],"key")
+    key_incr_flag = check_tag_f(tags[0]["key"], "incr") if key_flag else False
+    last_key = [0,]
     key_alias_flag = check_tag_f(tags[1],"key_alias") if len(tags) > 1 else False
     ret = {} if key_flag and not raw_flag else []
     key_alias_d = {} if key_alias_flag else None
@@ -254,12 +271,14 @@ def sheet_to_dict(sheet, alias_d):
             if isinstance(row[0], unicode) and row[0].startswith("//"):
                 continue
             row_key = None
+            row_key_alias = None
             for ncol, value in enumerate(row):
+                tag = tags[ncol]
                 col_name = col_names[ncol]
                 if not col_name:
-                    if not key_alias_flag or "key_alias" not in tags[ncol]:
+                    # key_alias要传递给下面的逻辑用
+                    if not key_alias_flag or "key_alias" not in tag:
                         continue
-                tag = tags[ncol]
                 cv = None
                 if "ignore" in tag:
                     continue
@@ -274,9 +293,9 @@ def sheet_to_dict(sheet, alias_d):
                     else:
                         if value != "":
                             cv = conv_funcs[ncol](value)
-                if ncol == 0 and "key" in tags[ncol]:
+                if ncol == 0 and "key" in tag:
                     row_key = cv
-                if ncol == 1 and "key_alias" in tags[ncol]:
+                if ncol == 1 and "key_alias" in tag:
                     row_key_alias = cv
                     if not col_name:
                         continue
@@ -294,6 +313,9 @@ def sheet_to_dict(sheet, alias_d):
                     return
                 assert row_key not in check_d, "key列内容重复, 行:%s,值:%s"%(nrow+1, row_key)
                 check_d[row_key] = row_d
+                if key_incr_flag:
+                    assert row_key == last_key[0] + 1, "incr key 不连续:%d"%row_key
+                    last_key[0] = row_key
                 if key_alias_flag:
                     assert row_key_alias not in key_alias_d, "key_alias列内容重复, 行:%s,值:%s"%(nrow+1, row_key_alias)
                     key_alias_d[row_key_alias] = row_key
