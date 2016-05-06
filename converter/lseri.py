@@ -30,6 +30,9 @@ def _format_basic(obj):
         return "nil"
     return str(obj)
 
+def _tolua(obj):
+    return obj
+
 def tolua(obj):
 
     if isinstance(obj, list):

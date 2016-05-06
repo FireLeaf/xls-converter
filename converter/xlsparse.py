@@ -33,13 +33,21 @@ def fprint(msg):
     fp_log.write(os.linesep)
     fp_log.flush()
 
+output_list = []
 def output(msg):
-    sys.stdout.write(msg)
-    sys.stdout.write(os.linesep)
+    output_list.append(msg)
+    return
+
+def flush_output():
+    s = lseri.tolua(output_list)
+    #fprint(s)
+    sys.stdout.write(s)
     sys.stdout.flush()
 
 def error(msg):
-    output(lseri.tolua({"error":msg}))
+    s = lseri.tolua({"error":msg})
+    sys.stdout.write(s)
+    sys.stdout.flush()
     sys.exit(1)
 
 def print_exc():
@@ -176,6 +184,7 @@ def parse_type_tag(ncol, tag_sl, type_s, conv_f):
                 default_val = conv_f(default_val if default_val else "")
             ret["default"] = default_val
             continue
+
         # key 处理
         m = TAG_KEY_RE.match(tag_s)
         if m:
@@ -190,6 +199,9 @@ def parse_type_tag(ncol, tag_sl, type_s, conv_f):
             ret["key"] = d
             continue
         raise Exception(tag_s)
+    # 容器类型list和dict默认就是空
+    if get_basic_or_struct_cf(type_s) == None and "default" not in ret:
+        ret["default"] = conv_f("")
 
     assert not ("key" in ret and "default" in ret), "key类型不能设置default"
     assert not ("key" in ret and "ignore" in ret), "key类型不能设置ignore"
@@ -235,10 +247,7 @@ def sheet_to_dict(sheet, alias_d):
             type_sl = i.split("#")
             conv_f = make_convert_func(type_sl[0])
             conv_funcs.append(conv_f)
-            if len(type_sl) > 1:
-                tags.append(parse_type_tag(n, type_sl[1:], type_sl[0], conv_f))
-            else:
-                tags.append({})
+            tags.append(parse_type_tag(n, type_sl[1:], type_sl[0], conv_f))
             struct_deps_l.append(find_struct_deps(type_sl[0]))
     except Exception, e:
         raise Exception("sheet:<%s>类型行%s列填写错误, 内容:<%s>, msg:%s"%(sheet.name, _num2colname(n), i, e))
@@ -388,7 +397,7 @@ def run_dir(path):
         out["ext"] = ext
         #if len(deps_d) > 0:
             #out["struct_deps"] = deps_d
-        output(lseri.tolua(out))
+        output(lseri._tolua(out))
     
 if __name__ == "__main__":
     fpath = sys.argv[1]
@@ -401,13 +410,14 @@ if __name__ == "__main__":
         alias_raw, g_alias_d, g_alias_deps = \
                 alias.parse(sys.argv[2])
         if len(alias_raw) > 0:
-            output(lseri.tolua({"alias_fields":alias_raw}))
+            output(lseri._tolua({"alias_fields":alias_raw}))
         if len(g_alias_deps) > 0:
-            output(lseri.tolua({"alias_deps":g_alias_deps}))
+            output(lseri._tolua({"alias_deps":g_alias_deps}))
         g_struct_d = typedef.parse(os.path.join(fpath, "struct.yaml"))
         g_struct_deps = typedef.parse_deps(os.path.join(sys.argv[2], "struct_deps.yaml"), g_struct_d)
         if len(g_struct_deps) > 0:
-            output(lseri.tolua({"struct_deps":g_struct_deps}))
+            output(lseri._tolua({"struct_deps":g_struct_deps}))
     except Exception, e:
         error(str(e))
     run_dir(fpath)
+    flush_output()

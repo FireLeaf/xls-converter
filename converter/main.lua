@@ -75,42 +75,46 @@ info("*****************python convert******************")
 local root_path = os.getenv("BIN_ROOT") or "./exporter"
 local fp = io.popen(sformat("python %s/xlsparse.py %s %s", root_path, doc_dir, alias_dir))
 while true do
-    local data = fp:read("*l")
+    local data = fp:read("*a")
     if not data then
         break
     end
     local f = load("return "..data, "=(load)", "t")
-    local ok, ret = pcall(f)
-    if not ok or not ret then
-        info(ok, ret, data)
+    local ok, all_data = pcall(f)
+    if not ok or not all_data then
+        info(ok, all_data)
         error("py convert error")
     end
-    if ret.error then
-        error(ret.error)
+
+    if all_data.error then
+        error(all_data.error)
     end
-    local fn = ret.filename
-    if fn then
-        global.raw[fn] = ret.data
-        copy[fn] = f().data
-        exts[fn] = ret.ext
-        sheet_struct_deps[fn] = ret.struct_deps
-    else
-        if ret.alias_deps then
-            alias_deps = ret.alias_deps
-        end
-        if ret.struct_deps then
-            struct_deps = ret.struct_deps
-        end
-        if ret.alias_fields then
-            for name, cfg in pairs(ret.alias_fields) do
-                local d = {}
-                for field, alias in pairs(cfg) do
-                    d[alias] = field
+    for _, ret in ipairs(all_data) do
+        local fn = ret.filename
+        if fn then
+            -- global.raw[fn] = ret.data
+            copy[fn] = ret.data
+            exts[fn] = ret.ext
+            sheet_struct_deps[fn] = ret.struct_deps
+        else
+            if ret.alias_deps then
+                alias_deps = ret.alias_deps
+            end
+            if ret.struct_deps then
+                struct_deps = ret.struct_deps
+            end
+            if ret.alias_fields then
+                for name, cfg in pairs(ret.alias_fields) do
+                    local d = {}
+                    for field, alias in pairs(cfg) do
+                        d[alias] = field
+                    end
+                    alias_fields[name] = d
                 end
-                alias_fields[name] = d
             end
         end
     end
+    break
 end
 fp:close()
 if not next(copy) then
@@ -146,7 +150,7 @@ for cfg_idx, entry in ipairs(export_cfg) do
     if type(snames) == "string" then
         if snames == "*" then
             snames = {}
-            for k, v in pairs(global.raw[fn]) do
+            for k, v in pairs(copy[fn]) do
                 table.insert(snames, k)
             end
         else
