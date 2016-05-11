@@ -343,18 +343,15 @@ def sheet_to_dict(sheet, alias_d):
     return ret, struct_deps_d, key_alias_d
 
 
-def get_alias_conf(wbname, shname):
-    if wbname in g_alias_d:
-        return g_alias_d[wbname]
-    key = alias.make_key(wbname, shname)
-    if key in g_alias_d:
-        return g_alias_d[key]
-    return None
+def get_alias_conf(fn, shname):
+    if fn in g_alias_d:
+        return g_alias_d[fn]
+    key = alias.make_key(fn, shname)
+    return g_alias_d.get(key)
 
-def convert_xls(filename, out_dir=None):
+def convert_xls(filename):
     try:
         wb = open_xls(filename)
-        wbname = os.path.basename(filename)
         ret = {}
         ext = {}
         for sheet in wb.sheets():
@@ -362,7 +359,7 @@ def convert_xls(filename, out_dir=None):
                 continue
             if sheet.nrows < 2:
                 continue
-            data, deps_d, key_alias_d = sheet_to_dict(sheet, get_alias_conf(wbname, sheet.name))
+            data, deps_d, key_alias_d = sheet_to_dict(sheet, get_alias_conf(filename, sheet.name))
             ret[sheet.name] = data
             d = {}
             if len(deps_d) > 0:
@@ -382,15 +379,16 @@ def convert_xls(filename, out_dir=None):
         error("file:%s, error: %s"%(filename, e))
 
 def run_dir(path):
+    os.chdir(path)
     files = []
     def visit(arg, dirname, names):
         for name in names:
             if name.endswith(".xls") and not name.startswith("_"):
-                files.append(os.path.join(dirname, name))
-    os.path.walk(path, visit, None)
-    for f in files:
-        fn = f[len(path)+1:]
-        data, ext = convert_xls(f)
+                files.append(os.path.relpath(os.path.join(dirname, name), "."))
+    os.path.walk(".", visit, None)
+    for fn in files:
+        fn = fn.replace(os.sep, "/")
+        data, ext = convert_xls(fn)
         out = {}
         out["filename"] = fn
         out["data"] = data
