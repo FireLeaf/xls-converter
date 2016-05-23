@@ -55,9 +55,13 @@ def print_exc():
     traceback.print_exc()
 
 # 基础数据类型：int, float, string
+_bool_d = {"true":True,"false":False,"1":True,"0":False,"1.0":True}
+def _conv_bool(s):
+    return _bool_d[str(s).lower()]
 basictype_convert_tbl = {
         "int":int,
         "float":float,
+        "bool":_conv_bool,
         "string":lambda s:str(s).encode("utf8"),
         }
 # 自定义struct
@@ -102,7 +106,6 @@ def get_basic_or_struct_cf(s):
             ret[cfg[idx].keys()[0]] = basictype_convert_tbl[cfg[idx].values()[0]](v)
         return ret
     return cf
-    
 
 def make_convert_func(type_s):
     cf = get_basic_or_struct_cf(type_s)
@@ -145,6 +148,7 @@ type_default_tbl = {
         "int":0,
         "float":0.0,
         "string":"",
+        "bool":False,
         }
 def parse_type_tag(ncol, tag_sl, type_s, conv_f):
     ret = {}
@@ -339,6 +343,7 @@ def sheet_to_dict(sheet, alias_d):
                     _check_key(raw_keys)
                 ret.append(row_d)
         except Exception, e:
+            # print_exc()
             raise Exception("sheet:%s, cell:<行%s-列%s>, %s"%(sheet.name, nrow+1, _num2colname(ncol), e))
     return ret, struct_deps_d, key_alias_d
 
