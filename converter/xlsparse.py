@@ -55,7 +55,7 @@ def print_exc():
     traceback.print_exc()
 
 # 基础数据类型：int, float, string
-_bool_d = {"true":True,"false":False,"1":True,"0":False,"1.0":True}
+_bool_d = {"true":True,"false":False,"1":True,"0":False,"1.0":True,"0.0":False}
 def _conv_bool(s):
     return _bool_d[str(s).lower()]
 basictype_convert_tbl = {
