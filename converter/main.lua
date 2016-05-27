@@ -12,6 +12,7 @@ local sformat = string.format
 
 local cfg_fn, doc_dir, alias_dir, script_dir, outdir = ...
 local cfg_env = {}
+print(cfg_fn)
 local cfg_f = loadfile(cfg_fn, "t", cfg_env)
 cfg_f()
 local export_cfg = cfg_env.export
@@ -493,13 +494,23 @@ end
 
 info("*****************save lua file******************")
 local suffix = cfg_env.save_suffix or ""
-for k, v in pairs(save) do
-    local s = DataDump(v)
-    --local fp = io.open(sformat("%s/%s", cfg_env.output_dir, k), "w")
-    local fp = io.open(sformat("%s/%s%s", outdir, k, suffix), "w")
+if cfg_env.all_in_one then
+    local one_file = sformat("%s/%s", outdir, cfg_env.all_in_one)
+    local fp = io.open(one_file, "w")
+    local s = DataDump(save)
     fp:write(s)
     fp:close()
-    info("save file: "..k)
+else
+    for k, v in pairs(save) do
+        local s = DataDump(v)
+        print("------------------------")
+        print(s)
+        --local fp = io.open(sformat("%s/%s", cfg_env.output_dir, k), "w")
+        local fp = io.open(sformat("%s/%s%s", outdir, k, suffix), "w")
+        fp:write(s)
+        fp:close()
+        info("save file: "..k)
+    end
 end
 
 local to_json_list = cfg_env.to_json_list
