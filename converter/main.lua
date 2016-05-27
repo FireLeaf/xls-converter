@@ -503,8 +503,6 @@ if cfg_env.all_in_one then
 else
     for k, v in pairs(save) do
         local s = DataDump(v)
-        print("------------------------")
-        print(s)
         --local fp = io.open(sformat("%s/%s", cfg_env.output_dir, k), "w")
         local fp = io.open(sformat("%s/%s%s", outdir, k, suffix), "w")
         fp:write(s)
