@@ -10,7 +10,8 @@ end
 local DataDump = require "dumper"
 local sformat = string.format
 
-local cfg_fn, doc_dir, alias_dir, script_dir, outdir = ...
+local cfg_fn, doc_dir, alias_dir, script_dir, outdir, json_outdir= ...
+json_outdir = json_outdir or (outdir and outdir.."_json")
 local cfg_env = {}
 print(cfg_fn)
 local cfg_f = loadfile(cfg_fn, "t", cfg_env)
@@ -229,7 +230,11 @@ local function _conv(check, convert, i, msg)
         return i
     elseif type(i) == "string" then
 		if i == "" then
-            return ""
+            if convert then
+                return 0
+            else
+                return ""
+            end
         end
         -- 兼容旧的写法
         if not convert then
@@ -517,7 +522,7 @@ if to_json_list and #to_json_list > 0 then
     local Json = require "json"
     for _, i in ipairs(to_json_list) do
         assert(save[i], sformat("要保存json的数据不存在:<%s>", i))
-        local fp = io.open(sformat("%s_json/%s.json", outdir, i), "w")
+        local fp = io.open(sformat("%s/%s.json", json_outdir, i), "w")
         local s = Json.encode(save[i])
         fp:write(s)
         fp:close()
