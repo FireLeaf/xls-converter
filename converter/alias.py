@@ -57,6 +57,9 @@ def parse(path):
                 deps[cfgname] = item[".deps"]
                 cfg["deps"] = item[".deps"]
                 del item[".deps"]
+            if ".export" in item:
+                cfg["export"] = item[".export"]
+                del item[".export"]
             raw[cfgname] = item
             cfg["alias"] = item
             def _sheet_log(msg):

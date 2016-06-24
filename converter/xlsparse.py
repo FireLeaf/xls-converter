@@ -237,8 +237,9 @@ def sheet_to_dict(sheet, alias_d):
     tags = []
     struct_deps_l = []
     struct_deps_d = {}
-    alias_deps = alias_d["deps"] if alias_d and "deps" in alias_d else {}
-    alias_d = alias_d["alias"] if alias_d and "alias" in alias_d else None
+    alias_deps = alias_d.get("deps", {}) if alias_d else {}
+    export_type = alias_d.get("export") if alias_d else None
+    alias_d = alias_d.get("alias") if alias_d else None
     try:
         # 处理第一行，类型
         end_col = None
@@ -262,8 +263,9 @@ def sheet_to_dict(sheet, alias_d):
         raise Exception("sheet:<%s>列名重复:<%s>"%(sheet.name, name_row[dup_idx]))
     col_names = []
     if alias_d:
+        export_all = export_type == "all"
         for name in name_row:
-            col_names.append(alias_d[name] if name in alias_d else None)
+            col_names.append(alias_d.get(name, name if export_all else None))
     else:
         col_names = name_row
 
@@ -379,8 +381,6 @@ def convert_xls(filename):
             ext[sheet.name] = d
         return ret, ext
     except Exception, e:
-        # import traceback
-        # traceback.print_exc()
         error("file:%s, error: %s"%(filename, e))
 
 def run_dir(path):

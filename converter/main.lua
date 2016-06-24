@@ -17,7 +17,7 @@ print(cfg_fn)
 local cfg_f = loadfile(cfg_fn, "t", cfg_env)
 cfg_f()
 local export_cfg = cfg_env.export
-local global = {raw = {}, save = {}}
+local global = {raw = {}, save = {}, cfg_env = cfg_env}
 local copy = {}
 local exts = {}
 local save= global.save
