@@ -278,7 +278,7 @@ def sheet_to_dict(sheet, alias_d):
     raw_keys = {}
     key_flag = check_tag_f(tags[0],"key")
     key_incr_flag = check_tag_f(tags[0]["key"], "incr") if key_flag else False
-    last_key = [0,]
+    last_key = [None,]
     key_alias_flag = check_tag_f(tags[1],"key_alias") if len(tags) > 1 else False
     ret = {} if key_flag and not raw_flag else []
     key_alias_d = {} if key_alias_flag else None
@@ -333,7 +333,10 @@ def sheet_to_dict(sheet, alias_d):
                 assert row_key not in check_d, "key列内容重复, 行:%s,值:%s"%(nrow+1, row_key)
                 check_d[row_key] = row_d
                 if key_incr_flag:
-                    assert row_key == last_key[0] + 1, "incr key 不连续:%d"%row_key
+                    if last_key[0] == None:
+                        last_key[0] = row_key
+                    else:
+                        assert row_key == last_key[0] + 1, "incr key 不连续:%d"%row_key
                     last_key[0] = row_key
                 if key_alias_flag:
                     assert row_key_alias not in key_alias_d, "key_alias列内容重复, 行:%s,值:%s"%(nrow+1, row_key_alias)
