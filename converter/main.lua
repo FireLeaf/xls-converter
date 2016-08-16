@@ -230,7 +230,7 @@ local function _conv(check, convert, i, msg)
         return i
     elseif type(i) == "string" then
 		if i == "" then
-            if convert then
+            if convert and type(({next(convert)})[2]) == "number" then
                 return 0
             else
                 return ""
@@ -489,6 +489,18 @@ for k, v in pairs(merge) do
         d[i] = save[i]
         save[i] = nil
     end
+end
+
+-- post process script
+if cfg_env.post_convert_script then
+    info("***************run post convert script******************")
+    local env = setmetatable({}, {__index = _ENV})
+    local f, msg = loadfile(sformat("%s/%s", script_dir, cfg_env.post_convert_script), "t", env)
+    assert(f, msg)
+    local ok, msg = xpcall(f, debug.traceback)  
+    assert(ok, "post convert script call")
+    assert(env.run, "post convert script has no run function")
+    env.run(global)
 end
 
 if not outdir then

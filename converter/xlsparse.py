@@ -232,6 +232,21 @@ def _num2colname(n):
         return _n2chr(n/26-1) + _n2chr(n%26)
     return str(n)
 
+EXPORT_ALL_RE = re.compile("^all(?:-\[(.*)\])?$")
+def _parse_export(s):
+    if not s:
+        return None, None
+    m = EXPORT_ALL_RE.match(s)
+    if m:
+        exclude = m.group(1)
+        if not exclude:
+            return "all", []
+        else:
+            return "all", [i.strip() for i in exclude.split(",")]
+    else:
+        return None, None
+
+
 def sheet_to_dict(sheet, alias_d):
     conv_funcs = []
     tags = []
@@ -263,9 +278,10 @@ def sheet_to_dict(sheet, alias_d):
         raise Exception("sheet:<%s>列名重复:<%s>"%(sheet.name, name_row[dup_idx]))
     col_names = []
     if alias_d:
-        export_all = export_type == "all"
+        export_flag, export_exmsg = _parse_export(export_type)
+        export_all = export_flag == "all"
         for name in name_row:
-            col_names.append(alias_d.get(name, name if export_all else None))
+            col_names.append(alias_d.get(name, name if export_all and name not in export_exmsg else None))
     else:
         col_names = name_row
 
@@ -278,7 +294,7 @@ def sheet_to_dict(sheet, alias_d):
     raw_keys = {}
     key_flag = check_tag_f(tags[0],"key")
     key_incr_flag = check_tag_f(tags[0]["key"], "incr") if key_flag else False
-    last_key = [None,]
+    last_key = [0,]
     key_alias_flag = check_tag_f(tags[1],"key_alias") if len(tags) > 1 else False
     ret = {} if key_flag and not raw_flag else []
     key_alias_d = {} if key_alias_flag else None
@@ -333,10 +349,7 @@ def sheet_to_dict(sheet, alias_d):
                 assert row_key not in check_d, "key列内容重复, 行:%s,值:%s"%(nrow+1, row_key)
                 check_d[row_key] = row_d
                 if key_incr_flag:
-                    if last_key[0] == None:
-                        last_key[0] = row_key
-                    else:
-                        assert row_key == last_key[0] + 1, "incr key 不连续:%d"%row_key
+                    assert row_key == last_key[0] + 1, "incr key 不连续:%d"%row_key
                     last_key[0] = row_key
                 if key_alias_flag:
                     assert row_key_alias not in key_alias_d, "key_alias列内容重复, 行:%s,值:%s"%(nrow+1, row_key_alias)
@@ -384,6 +397,7 @@ def convert_xls(filename):
             ext[sheet.name] = d
         return ret, ext
     except Exception, e:
+        # print_exc()
         error("file:%s, error: %s"%(filename, e))
 
 def run_dir(path):
