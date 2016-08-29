@@ -535,7 +535,7 @@ if to_json_list and #to_json_list > 0 then
     for _, i in ipairs(to_json_list) do
         assert(save[i], sformat("要保存json的数据不存在:<%s>", i))
         local fp = io.open(sformat("%s/%s.json", json_outdir, i), "w")
-        local s = Json.encode(save[i])
+        local s = Json.encode(save[i], {keyorder = {}})
         fp:write(s)
         fp:close()
     end

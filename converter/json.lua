@@ -212,6 +212,7 @@ local strrep, gsub, strsub, strbyte, strchar, strfind, strlen, strformat =
       string.find, string.len, string.format
 local strmatch = string.match
 local concat = table.concat
+local sort = table.sort
 
 local json = { version = "dkjson 2.4" }
 
@@ -385,6 +386,23 @@ local function addpair (key, value, prev, indent, level, buffer, buflen, tables,
   return encode2 (value, indent, level, buffer, buflen + 2, tables, globalorder)
 end
 
+local function keys(t)
+  local res = {}
+  local oktypes = { stringstring = true, numbernumber = true }
+  local function cmpfct(a,b)
+    if oktypes[type(a)..type(b)] then
+      return a < b
+    else
+      return type(a) < type(b)
+    end
+  end
+  for k in pairs(t) do
+    res[#res+1] = k
+  end
+  sort(res, cmpfct)
+  return res
+end
+
 encode2 = function (value, indent, level, buffer, buflen, tables, globalorder)
   local valtype = type (value)
   local valmeta = getmetatable (value)
@@ -467,8 +485,9 @@ encode2 = function (value, indent, level, buffer, buflen, tables, globalorder)
             prev = true -- add a seperator before the next element
           end
         end
-        for k,v in pairs (value) do
+        for i,k in pairs (keys(value)) do
           if not used[k] then
+            local v = value[k]
             buflen, msg = addpair (k, v, prev, indent, level, buffer, buflen, tables, globalorder)
             if not buflen then return nil, msg end
             prev = true -- add a seperator before the next element
