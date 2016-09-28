@@ -237,7 +237,8 @@ local function _conv(check, convert, i, msg)
             end
         end
         -- 兼容旧的写法
-        if not convert then
+        -- not convert[i] 因为索引的是同一个table，可能已经被convert过了。
+        if not convert or not convert[i] then
             return assert(check[i], msg)
         end
         return assert(convert[i], msg)
