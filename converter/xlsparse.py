@@ -428,7 +428,7 @@ if __name__ == "__main__":
         fpath = fpath.decode("utf8")
     try:
         alias_raw, g_alias_d, g_alias_deps = \
-                alias.parse(sys.argv[2])
+                alias.parse(fpath, sys.argv[2])
         if len(alias_raw) > 0:
             output(lseri._tolua({"alias_fields":alias_raw}))
         if len(g_alias_deps) > 0:
