@@ -24,7 +24,7 @@ def _log(msg, fn, cfgname, xls=None, sheet=None):
 def _parse_deps(depsd):
     return depsd
 
-def parse(path):
+def parse(xls_dir, path):
     raw = {}
     field_alias = {}
     deps = {}
@@ -79,6 +79,8 @@ def parse(path):
                     sheet_defs.add(xls)
                     field_alias[key] = cfg
             for xls, cont in sheets.iteritems():
+                xls_path = os.path.join(xls_dir, xls)
+                assert os.path.exists(xls_path), "NOT EXIST XLS:%s YMAL:%s !!!" % (xls, fn)
                 if cont == "all":
                     _process_all(cont)
                 else:
