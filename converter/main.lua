@@ -135,7 +135,7 @@ for cfg_idx, entry in ipairs(export_cfg) do
     local snames = entry[2]
     local script = entry[3]
     local save_name = entry[4]
-    info("lua prepare: "..save_name)
+    info(string.format("lua prepare: %s < %s", save_name, fn))
     assert(merge_name_d[save_name] == nil,
              "输出名字重复:"..save_name)
     save_name_d[save_name] = true
@@ -278,10 +278,10 @@ local function _make_check_f(deps)
         return function(ckd)
             local ret = {}
             for k, v in pairs(ckd) do
-                if k_src then
+                if deps.key then
                     k = _conv(k_src, k_dst, k, "key error: "..k)
                 end
-                if v_src then
+                if deps.value then
                     v = _conv(v_src, v_dst, v, "value error: "..v)
                 end
                 ret[k] = v
@@ -449,13 +449,11 @@ for cfg_idx, entry in ipairs(export_cfg) do
         end
     end
     if mod.post_convert then
-        local last_script = post_convert_names[save_name]
-        if not last_script then
-            post_convert_names[save_name] = script
+        local d = _get_or_create_key(post_convert_names, save_name)
+        if not d[script] then
+            d[script] = true
             local sheets = string.format("save:<%s> file:<%s> sheets:<%s>", save_name, fn, table.concat(snames, ","))
             table.insert(post_convert_funcs, {mod.post_convert, save_name, sheets})
-        else
-            assert(last_script == script, "不同脚本的post_convert方法对应了同个导出名字")
         end
     end
 end
@@ -474,8 +472,14 @@ local merge = {}
 local no_save = {}
 for k, v in pairs(cfg_exts) do
     if v.merge then
-        local d = _get_or_create_key(merge, v.merge)
-        table.insert(d, k)
+        -- 可以配置成weapon.attr这种
+        local it = string.gmatch(v.merge, "[^.]+")
+        local to = it()
+        local alias = it()
+        assert(it() == nil, sformat("export name:<%s> merge format error:<%s>", k, v.merge))
+        local d = _get_or_create_key(merge, to)
+        alias = alias or k
+        table.insert(d, {raw = k, alias = alias})
     end 
     if v.no_save then
         table.insert(no_save, k)
@@ -487,8 +491,8 @@ end
 for k, v in pairs(merge) do
     for _, i in ipairs(v) do
         local d = _get_or_create_key(save, k)
-        d[i] = save[i]
-        save[i] = nil
+        d[i.alias] = save[i.raw]
+        save[i.raw] = nil
     end
 end
 

@@ -165,12 +165,15 @@ def parse_type_tag(ncol, tag_sl, type_s, conv_f):
         ret["key_alias"] = True
     def _index_f():
         ret["index"] = True
+    def _defaultnil_f():
+        ret["default"] = None   
     tag_fs = {
         #"key":_key_f,
         "ignore":_ignore_f,
         "raw":_raw_f,
         "key_alias":_key_alias_f,
         "index":_index_f,
+        "defaultnil": _defaultnil_f,
     }
     
     for tag_s in tag_sl:
@@ -178,9 +181,10 @@ def parse_type_tag(ncol, tag_sl, type_s, conv_f):
             #assert tag_s in tag_fs, "标签填写错误:<%s>"%tag_s
             tag_fs[tag_s]()
             continue
-        # defautl 处理
+        # default 处理
         m = TYPE_DEFAULT_RE.match(tag_s)
         if m:
+            assert "default" not in ret, "重复设置default"
             default_val = m.group(1) 
             if not default_val and type_s in type_default_tbl:
                 default_val = type_default_tbl[type_s]
@@ -209,6 +213,7 @@ def parse_type_tag(ncol, tag_sl, type_s, conv_f):
 
     assert not ("key" in ret and "default" in ret), "key类型不能设置default"
     assert not ("key" in ret and "ignore" in ret), "key类型不能设置ignore"
+    assert not ("key" in ret and "index" in ret), "key类型不能设置index"
     return ret
 
 def open_xls(filename):
@@ -311,9 +316,15 @@ def sheet_to_dict(sheet, alias_d):
                 tag = tags[ncol]
                 col_name = col_names[ncol]
                 if not col_name:
-                    # key_alias要传递给下面的逻辑用
-                    if not key_alias_flag or "key_alias" not in tag:
+                    # key和key_alias列走流程可以不导出
+                    is_key = key_flag and "key" in tag
+                    is_alias = key_alias_flag and "key_alias" in tag
+                    if not is_key and not is_alias:
                         continue
+                else:
+                    if "index" in tag and col_name not in struct_deps_d:
+                        if alias_d and col_name not in alias_deps:
+                            raise Exception("%s填写了index但没有定义依赖"%col_name)
                 cv = None
                 if "ignore" in tag:
                     continue
@@ -332,18 +343,11 @@ def sheet_to_dict(sheet, alias_d):
                     row_key = cv
                 if ncol == 1 and "key_alias" in tag:
                     row_key_alias = cv
-                    if not col_name:
-                        continue
-                if "index" in tags[ncol]:
-                    # 普通index
-                    if col_name not in alias_deps and col_name not in struct_deps_d:
-                        if alias_d:
-                            raise Exception("%s填写了index但没有定义依赖"%col_name)
-                row_d[col_name] = cv
-            if not raw_flag and key_flag and row_key == None:
-                raise Exception("本行key列没有导出！")
+                if col_name:
+                    row_d[col_name] = cv
             def _check_key(check_d):
                 # 检查key是否重复
+                # raw表，key列可能是None，不用检查了
                 if raw_flag and row_key == None:
                     return
                 assert row_key not in check_d, "key列内容重复, 行:%s,值:%s"%(nrow+1, row_key)
